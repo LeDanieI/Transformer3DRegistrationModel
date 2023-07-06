@@ -1,7 +1,7 @@
 # Swin-transformed based rigid registration model
 
 Transformer-based rigid registration model trained on 3D MRI brain images.
-This repository is used for educational purposes on several topics.
+This repository is used for educational purpose on several topics.
 
 ## Requirements
 
