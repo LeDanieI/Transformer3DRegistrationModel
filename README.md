@@ -1,6 +1,6 @@
 # Swin-transformed based rigid registration model
 
-Swin transformer for rigid image registration.
+Swin-transformer based rigid registration model trained on MRI brain images
 
 ## Requirements
 
