@@ -83,4 +83,4 @@ class OASISDataset(Dataset):
         #
     
     def __len__(self):
-        return 
+        return len(self.data_paths)
