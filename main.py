@@ -2,6 +2,7 @@
 from datasets import OASISDataset
 from plotimg import plotimg
 
+<<<<<<< HEAD
 import torch
 import torch.utils.data as data
 
