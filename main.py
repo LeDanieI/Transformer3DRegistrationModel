@@ -18,18 +18,18 @@ epochs = 2
 device = 'cuda'
 
 
-
+#%% data prep
 dataset = OASISDataset()
-
 train_set, val_set, test_set = data.random_split(dataset,[0.7,0.1,0.2], generator=torch.Generator().manual_seed(42))
+train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True,num_workers=0,pin_memory=True)
+val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=True,num_workers=0,pin_memory=True)
+test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False,num_workers=0)
+
+
 config = get_VitBase_config(img_size=tuple(dataset.inshape))
 model = RegTransformer(config)
 model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True,num_workers=0,pin_memory=True)
-val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size, shuffle=True,num_workers=0,pin_memory=True)
-test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False,num_workers=0)
 
 #%%
 """ TRAINING """
@@ -56,5 +56,8 @@ while epoch <= epochs:
 end = time.time()
 traintime = round(end - start)
 print('Total time training: ', traintime, ' seconds')
+
+
 #%%
-torch.save(model.state_dict(), f'save/supervised/{learning_rate}/weights.pth')
+test_model(model, test_loader, dataset, device)
+

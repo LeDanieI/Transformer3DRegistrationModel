@@ -26,6 +26,7 @@ class OASISDataset(Dataset):
         self.generate_T(max_trans, max_angle)
         self.inshape, self.voxel_spacing = self.get_image_header(self.data_paths[0])
         self.adjust_shape(32, self.data_paths)
+        print("Dataset initialized")
         #
     
     def get_paths(self, data_path, mask_path):
@@ -89,7 +90,6 @@ class OASISDataset(Dataset):
         moving_mask = self.transform_rigid(self.T_real[idx],fixed_mask.unsqueeze(0))
         moving_mask = torch.where(moving_mask < 0.5, torch.zeros_like(moving_mask), torch.ones_like(moving_mask))
         return moving_img, fixed_img, moving_mask, fixed_mask
-
         
     def __getitem__(self, index):       
         moving_img, fixed_img, moving_mask, fixed_mask = self.augmentation(index)
@@ -98,3 +98,4 @@ class OASISDataset(Dataset):
     
     def __len__(self):
         return len(self.data_paths)
+    
