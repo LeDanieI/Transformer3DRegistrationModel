@@ -24,6 +24,9 @@ class OASISDataset(Dataset):
                  rotateonly=False):
         self.data_paths, self.mask_paths = self.get_paths(data_path, mask_path)
         self.generate_T(max_trans, max_angle)
+        self.inshape, self.voxel_spacing = self.get_image_header(self.data_paths[0])
+        self.adjust_shape(32, self.data_paths)
+        print("Dataset initialized")
         #
     
     def get_paths(self, data_path, mask_path):
@@ -61,6 +64,18 @@ class OASISDataset(Dataset):
             print('Image does not exist')
         return image_np
     
+    def get_image_header(self,path):
+        image = sitk.ReadImage(path)
+        dim = np.array(image.GetSize())
+        voxel_sp = np.array(image.GetSpacing())
+        return dim[::-1], voxel_sp[::-1]
+           
+    def adjust_shape(self, multiple_of, data_paths):
+        old_shape, _ = self.get_image_header(data_paths[0])
+        new_shape = tuple([int(np.ceil(shp / multiple_of) * multiple_of) for shp in old_shape])
+        self.inshape = new_shape
+        self.offsets = [shp - old_shp for (shp, old_shp) in zip(new_shape, old_shape)]
+        
     def transform_rigid(self, T, input_tensor):
         grid = F.affine_grid(T, input_tensor.size(),align_corners=False) #N*3*4 & N*C*D*H*W = 1,1,192,224,160
         input_aug_tensor = F.grid_sample(input_tensor, grid,align_corners=False).squeeze(0)   
@@ -75,12 +90,12 @@ class OASISDataset(Dataset):
         moving_mask = self.transform_rigid(self.T_real[idx],fixed_mask.unsqueeze(0))
         moving_mask = torch.where(moving_mask < 0.5, torch.zeros_like(moving_mask), torch.ones_like(moving_mask))
         return moving_img, fixed_img, moving_mask, fixed_mask
-
         
     def __getitem__(self, index):       
         moving_img, fixed_img, moving_mask, fixed_mask = self.augmentation(index)
-        return moving_img[0], fixed_img[0], moving_mask[0], fixed_mask[0]
+        return moving_img[0], fixed_img[0], moving_mask[0], fixed_mask[0], self.T_inv[index], self.T_real[index]
         #
     
     def __len__(self):
-        return 
+        return len(self.data_paths)
+    

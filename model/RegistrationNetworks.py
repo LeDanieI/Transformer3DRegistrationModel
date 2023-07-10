@@ -154,5 +154,5 @@ class RegTransformer(nn.Module):
         T = T.view(-1, 3, 4)
         # print(T)
         moving_warped = self.stl(moving, T)
-        return moving_warped, T, angles,trans
+        return moving_warped, T
 
