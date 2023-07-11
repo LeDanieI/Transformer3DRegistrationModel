@@ -8,6 +8,7 @@ import torch.utils.data as data
 import time
 from train_val_test import train_epoch, validate_epoch, test_model, plot_test, test_initial
 from plotOutput import plotOutput
+from plotSample import plotSample
 #This is a test
 
 torch.cuda.empty_cache()
@@ -71,3 +72,4 @@ for key, values in output.items():
 plotOutput(output)    
 
 #%% Plot sample
+plotSample(model, dataset, test_set, 5, 40, device)
