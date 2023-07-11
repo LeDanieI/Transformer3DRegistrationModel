@@ -58,6 +58,14 @@ traintime = round(end - start)
 print('Total time training: ', traintime, ' seconds')
 
 
+#%% Output is a dictionary with keys: ['ncc','MSE_T','MSE_img','dice','hd95']
+""" TESTING """
+output = test_model(model, test_loader, dataset, device)
 #%%
-test_model(model, test_loader, dataset, device)
+for key, values in output.items():
+    for i, value in enumerate(values):
+        if isinstance(value, torch.Tensor):
+            values[i] = value.item()
+
+    
 

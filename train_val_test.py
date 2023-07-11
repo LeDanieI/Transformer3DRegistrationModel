@@ -120,18 +120,11 @@ def test_model(model, test_loader, dataset, device):
     # torch.save(model.state_dict(), f'save/supervised/{learning_rate}/weights.pth')
     model.load_state_dict(torch.load(weightspath))
     
-    test_ncc_batch = []
-    test_T_error_batch = []
-    total_dsc_batch = []
-    total_mse_img_batch = []
-    total_hd95_batch = []
-
-    # initial_ncc = []
-    # initial_dsc = []
-    # initial_mse_img = []
-    # initial_mse_T = []
-    # initial_hd95 = []
-    
+    out={}
+    list_out = ['ncc','MSE_T','MSE_img','dice','hd95']
+    for key in list_out:
+        out[key]=[]
+        
     mse_loss = torch.nn.MSELoss()
     dsc = DSC(device)
     similarity_loss = NCC(device)
@@ -139,45 +132,25 @@ def test_model(model, test_loader, dataset, device):
     #Disable training
     model.train(mode=False)
     torch.no_grad()
+    with torch.no_grad():
+        for batch_idx, (img_moving, img_fixed, mask_moving, mask_fixed, T_ground_truth, T_augment) in enumerate(tqdm(test_loader, file=sys.stdout)):
+            img_moving, img_fixed, mask_moving, mask_fixed = img_moving.to(device).unsqueeze(0), img_fixed.to(device).unsqueeze(0), mask_moving.to(device).unsqueeze(0), mask_fixed.to(device).unsqueeze(0)
+            img_warped, T = model(img_moving, img_fixed)
+            mask_warped = dataset.transform_rigid(T,mask_moving)
     
-    for batch_idx, (img_moving, img_fixed, mask_moving, mask_fixed, T_ground_truth, T_augment) in enumerate(tqdm(test_loader, file=sys.stdout)):
-        img_moving, img_fixed, mask_moving, mask_fixed = img_moving.to(device).unsqueeze(0), img_fixed.to(device).unsqueeze(0), mask_moving.to(device).unsqueeze(0), mask_fixed.to(device).unsqueeze(0)
-        # print(img_moving.shape)
-        # breakpoint()
-        # print(img_moving.shape, img_fixed.shape)
-        img_warped, T = model(img_moving, img_fixed)
-        mask_warped = dataset.transform_rigid(T,mask_moving)
+            test_loss = similarity_loss.forward(img_fixed, img_warped)  
+            dice = dsc.forward(mask_warped, mask_fixed)
+            MSE_img = mse_loss(img_warped, img_fixed).item()
+            T_error = mse_loss(T, T_ground_truth.to(device)).item()
+            hd95 = monai.metrics.compute_hausdorff_distance(mask_warped.unsqueeze(0), mask_fixed, percentile=95)
+    
+            scores_img = [test_loss, T_error, MSE_img, dice, hd95]
+            for key, score in zip(list_out,scores_img):
+                out[key].append(score)
+    
+            del test_loss, img_moving, img_fixed, img_warped, T_error, T_ground_truth, dice, mask_moving, mask_fixed, mask_warped, MSE_img, hd95, key, score
 
-        
-        # initial_ncc += [similarity_loss.forward(img_fixed, img_moving)]
-        # initial_dsc += [dsc.forward(mask_moving, mask_fixed)]
-        # initial_mse_img += [mse_loss(img_moving, img_fixed).item()]
-
-        # initial_mse_T += [mse_loss(T.squeeze(), T_augment.to(device)).item()]
-        # initial_hd95 += [monai.metrics.compute_hausdorff_distance(mask_moving, mask_fixed, percentile=95)]
-        
-        # initialavg = [initial_ncc, initial_dsc, initial_mse_img, initial_mse_T, initial_hd95]
-
-        # test_loss = similarity_loss.forward(img_fixed, img_warped)  
-        # dice = dsc.forward(mask_warped, mask_fixed)
-        # MSE_img = mse_loss(img_warped, img_fixed).item()
-        # T_error = mse_loss(T, T_ground_truth.to(device)).item()
-        # hd95 = monai.metrics.compute_hausdorff_distance(mask_warped.unsqueeze(0), mask_fixed, percentile=95)
-
-        # test_ncc_batch.append(test_loss.item())
-        # test_T_error_batch.append(T_error)
-        # total_dsc_batch.append(dice)
-        # total_mse_img_batch.append(MSE_img)
-        # total_hd95_batch.append(hd95)
-
-        # del test_loss, img_moving, img_fixed, img_warped, T_error, T_ground_truth, dice, mask_moving, mask_fixed, mask_warped, MSE_img, hd95
-
-    # test_ncc_loss = test_ncc_batch/len(test_loader)
-    # test_T_error = test_T_error_batch /len(test_loader)
-    # test_dsc = total_dsc_batch / len(test_loader)
-    # mse_img = total_mse_img_batch / len(test_loader)
-    # hd95_test = total_hd95_batch / len(test_loader)
-    return test_ncc_batch, total_dsc_batch, total_mse_img_batch , test_T_error_batch, total_hd95_batch
+    return out
 
 def test_initial(model, test_loader, dataset, device):
     initial_ncc = []
