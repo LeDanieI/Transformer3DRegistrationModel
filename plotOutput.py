@@ -16,8 +16,9 @@ def plotOutput(outputdic):
     
     # plt.ylim(-15, 40)
     # plt.xlim(0, 180)
+    fig, ax = plt.subplots()    
     for keys in outputdic.keys():
-        fig, ax = plt.subplots()
+ 
         
         figure(figsize=(4, 3), dpi=300)
         plt.rcParams["axes.edgecolor"] = "black"
@@ -32,6 +33,4 @@ def plotOutput(outputdic):
         plt.ylabel('Score',fontweight='bold')
         plt.xlabel('Image number (-)',fontweight='bold')
         plt.title(keys)
-        # plt.legend(['MSE unsupervised','MSE supervised','LNCC'])
-        # plt.legend([(p1, p4), (p2, p5)], ['1e-9 unsup/sup', '1e-8 unsup/sup'], numpoints=1,handler_map={tuple: HandlerTuple(ndivide=None)}, handlelength=3)
         plt.show()
