@@ -7,7 +7,8 @@ import torch
 import torch.utils.data as data
 import time
 from train_val_test import train_epoch, validate_epoch, test_model, plot_test, test_initial
-
+from plotOutput import plotOutput
+from plotSample import plotSample
 #This is a test
 
 torch.cuda.empty_cache()
@@ -58,6 +59,17 @@ traintime = round(end - start)
 print('Total time training: ', traintime, ' seconds')
 
 
-#%%
-test_model(model, test_loader, dataset, device)
+#%% Output is a dictionary with keys: ['ncc','MSE_T','MSE_img','dice','hd95']
+""" TESTING """
+output = test_model(model, test_loader, dataset, device)
+#%% Copy from GPU to CPU
+for key, values in output.items():
+    for i, value in enumerate(values):
+        if isinstance(value, torch.Tensor):
+            values[i] = value.item()
 
+#%% Plot graphs of scores
+plotOutput(output)    
+
+#%% Plot sample
+plotSample(model, dataset, test_set, 5, 40, device)
